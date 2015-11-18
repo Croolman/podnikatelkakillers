@@ -106,133 +106,99 @@ int program(){
 	int outcome;
 	
 	switch(token){
-		/*PROGRAM → FUNKCES eof*/
 		case INT:
 		case DOUBLE:
 		case STRING:
-			outcome = funkces();
-			if (outcome != IS_OK)
-			{
-				return outcome;
-			}
-			getToken
-			if (outcome != EOF)
-			{
-				return SYN_ERR;
-			}
+		case EOF:
+			/*PROGRAM → DFUNKCE eof*/
+			outcome = dfunkce();
+			if (outcome != IS_OK) return outcome;	
+			if (token != EOF) return SYN_ERR;		
 			return IS_OK;
 			break;
 		default:
-			return SEM_ERR;
+			return SYN_ERR;
 			break;
 	}
 }
 
-int funkces(){ // reseni i pro eps pravidlo 3
+int dfunkce(){
+		/*<DFUNKCE>*/
 	int outcome;
 	switch(token){
-		// FUNKCES → FUNKCE FUNKCES
 		case INT:
 		case DOUBLE:
 		case STRING:
 			outcome = funkce();
-			if (outcome != IS_OK)
-			{
-				return outcome;
-			}
-			outcome = funkces();
-			if (outcome != IS_OK)
-			{
-				return outcome;
-			}
-
+			if (outcome != IS_OK) return outcome;
+			outcome = dfunkce();
+			if (outcome != IS_OK) return outcome;
 			return IS_OK;
 			break;
-		default: // nenastane, jen z principu or eps
+		case EOF:
 			return IS_OK;
+			break;
+		default:
+			return SYN_ERR;
 			break;
 	}
 }
 
 int funkce(){
+		/*<FUNKCE>*/
 	int outcome;
+	
 	switch(token){
-		// FUNKCE → FUNKCEZ SLOZENY
-		// FUNKCE → FUNKCEZ strednik
-		// FUNKCE → eps
 		case INT:
 		case DOUBLE:
 		case STRING:
-			outcome = funkcez();
-			if (outcome != IS_OK)
-			{
-				return outcome;
-			}
-			getToken
-			switch(outcome){
-				case STREDNIK:
-					// vlozeni do glob_tabSym
-					return IS_OK;
-				case LS_ZAVORKA:
-					// vlozeni do glob_tabSym
-					outcome = slozeny();
-					if (outcome != IS_OK)
-					{
-						return outcome;
-					}
-					break;
-				default:
-			}
-			break;
-		default:
+			outcome = deklarace();
+			if (outcome != IS_OK) return outcome;
+			outcome = definice();
+			if (outcome != IS_OK) return outcome;
 			return IS_OK;
 			break;
-	}
+		default:
+			return SYN_ERR;
+			break;
+	}	
 }
 
-int funkcez(){
+int deklarace(){
+			/*<DEKLARACE>*/
 	int outcome;
-	string copyatr;
+	
 	switch(token){
-		//FUNKCEZ → PARAMETR lz PARAMETRY pz
 		case INT:
-			data->typ = INT_V;
-			break;
 		case DOUBLE:
-			data->typ = DOUBLE_V;
-			break;
 		case STRING:
-			data->typ = STRING_V;
+			outcome = parametr();
+			if (outcome != IS_OK) return outcome;
+			if (token != L_ZAVORKA) return SYN_ERR;
+			getToken
+			outcome = parametry();
+			if (outcome != IS_OK) return outcome;
+			if (token != P_ZAVORKA) return SYN_ERR;
+			getToken
+			return IS_OK;
 			break;
 		default:
+			return SYN_ERR;
+			break;
 	}	
-	getToken
-	if (token != ID)
-	{
-		return SYN_ERR;
-	}else{
-		if((strCopyString(copyatr, attr) == STR_ERROR){
-			return INTERNAL_ERR;
-		}
-	}
-	getToken
-	if (token != L_ZAVORKA)
-	{
-		return SYN_ERR;
-	}
-	getToken
+}
+
+int typ(){
+	/* TYP */
+	int outcome;
+
 	switch(token){
 		case INT:
 		case DOUBLE:
 		case STRING:
-		 	outcome = parametry();
-		 	if (outcome != IS_OK)
-		 	{
-		 		return outcome;
-		 	}
-		 	break;
-		case P_ZAVORKA:
+			getToken
 			return IS_OK;
+			break;
 		default:
 			return SYN_ERR;
 			break;
@@ -240,56 +206,98 @@ int funkcez(){
 }
 
 int parametry(){
+		/*<PARAMETRY>*/
 	int outcome;
 	switch(token){
-		//PARAMETRY → PARAMETR DPARAMETR (parametry)
 		case INT:
-			// ulozeni hodnoty
-			break;
 		case DOUBLE:
-			// sameAs
-			break;
 		case STRING:
-			//sameAs
+		/* PARAMETRY → PARAMETR DPARAMETR */
+			outcome = parametr();
+			if (outcome != IS_OK) return outcome;
+			outcome = dparametr();
+			if (outcome != IS_OK) return outcome;
+			getToken
+			return IS_OK;
+			break;
+		case P_ZAVORKA:
+		/* PARAMETRY → ε */
+			return IS_OK;
 			break;
 		default:
 			return SYN_ERR;
 			break;
 	}
-	getToken
-	if (token != ID)
-	{
-		return SYN_ERR;
-	} 
-	// ulozeni ID do tabsym
-	getToken 
+}
+
+int dparametr(){
+	/*<DPARAMETRY>*/
+	int outcome;
 	switch(token){
-		case CARKA:
-			getToken 
-			outcome = parametry();
-			if (outcome != IS_OK)
-			{
-				return outcome;
-			}
-			break;
 		case P_ZAVORKA:
 			return IS_OK;
 			break;
+		case CARKA:
+			getToken
+			outcome = parametr();
+			if (outcome != IS_OK) return outcome;
+			outcome = dparametr();
+			if (outcome != IS_OK) return outcome;
+			getToken
+			return IS_OK;
+			break;
 		default:
 			return SYN_ERR;
+			break;
 	}
-	return IS_OK;
+}
+
+int parametr(){
+	/* PARAMETR */
+	int outcome;
+
+	switch(token){
+		case INT:
+		case DOUBLE:
+		case STRING:
+			outcome = typ();
+			if (outcome != IS_OK) return outcome;
+			if (token != ID) return SYN_ERR;
+			getToken
+			return IS_OK;
+			break;
+		default:
+			return SYN_ERR;
+			break;
+	}
 }
 
 int slozeny(){
+	/* SLOZENY → lsz PRIKAZY psz */
 	int outcome;
-	getToken 
 	switch(token){
-		//SLOZENY → lsz PRIKAZY psz
-		case PS_ZAVORKA:
+		case LS_ZAVORKA:
+			getToken
+			outcome = prikazy();
+			if (outcome != IS_OK) return outcome;
+			if (token != PS_ZAVORKA) return SYN_ERR;
+			getToken
 			return IS_OK;
-			break; //kvuli Korgymu a KAntymu
-		//PRIKAZY → PRIKAZ PRIKAZY
+			break;
+		default:
+			return SYN_ERR;
+			break;
+	}
+}
+
+int prikazy(){
+	/* PRIKAZY → PRIKAZ PRIKAZY */
+	int outcome;
+
+	switch(token){
+		case INT:
+		case DOUBLE:
+		case STRING:
 		case ID:
 		case IF:
 		case FOR:
@@ -297,112 +305,143 @@ int slozeny(){
 		case CIN:
 		case COUT:
 		case AUTO:
-		case INT:
-		case DOUBLE:
-		case STRING:
 			outcome = prikaz();
-			if (outcome != IS_OK)
-			{
-				return outcome;
-			}
-			if (token == PS_ZAVORKA)
-			{
-				return IS_OK;
-			}else{
-				return SYN_ERR;
-			}
+			if (outcome != IS_OK) return outcome;
+			outcome = prikazy();
+			if (outcome != IS_OK) return outcome;
+			getToken
+			return IS_OK;
+			break;
+		case PS_ZAVORKA:
+		/* PRIKAZY → ε */
+			return IS_OK;
 			break;
 		default:
-			return SYN_ERR;		
+			return SYN_ERR;
+			break;
+	}
+}	
+
+int definice(){
+	/* DEFINICE → strednik */
+	int outcome;
+	switch(token){
+		case LS_ZAVORKA:
+			outcome = slozeny();
+			if (outcome != IS_OK) return outcome;
+			getToken
+			return IS_OK;
+			break;
+		case STREDNIK:
+		/* DEFINICE → strednik */
+			return IS_OK;
+			break;
+		default:
+			return SYN_ERR;
+			break;
 	}
 }
 
 int prikaz(){
+	/* PRIKAZ → PROMENNA strednik */
 	int outcome;
-	getToken
-	//PRIKAZY → eps
-	//PRIKAZ → PROMENNA	
-	//PRIKAZ → id prirazeni expr strednik	
-	//PRIKAZ → id prirazeni id lz TERMY pz strednik
-	//PRIKAZ → if lz expr pz SLOZENY else SLOZENY	
-	//PRIKAZ → for lz PROMENNA strednik expr strednik id prirazeni expr pz SLOZENY	
-	//PRIKAZ → return expr strednik	
-	//PRIKAZ → cin NACTENI strednik	
-	//PRIKAZ → cout VYPIS strednik 
 	switch(token){
-		case PS_ZAVORKA:
-			return IS_OK;
-			break;
-		case AUTO:
 		case INT:
 		case DOUBLE:
 		case STRING:
-			outcome = def_promenna();
-			if (outcome != IS_OK)
-			{
-				return outcome;
-			}
-			break;
-		case ID:
-			hledane_id = najdi_v_tabulce(table,attr.str);
-			if (hledane_id == NULL) // najdi v tabulce
-			{
-				return SEM_ERR;
-			}
-			if ((hledane_id->defined) == 0)
-			{
-				return SEM_ERR;
-			}			
-			getToken 
-			if (token != PRIRAZENI)
-			{
-				return SYN_ERR;
-			}
+		case AUTO:
+			outcome = promenna();
+			if (outcome != IS_OK) return outcome;
+			if (token != STREDNIK) return SYN_ERR;
 			getToken
-			switch(token){
-				//case expr: zasobnik expr - dodelat!! >>>>        <<<<<
-				case ID:
-					hledane_id = najdi_v_tabulce(table,attr.str);
-					if (hledane_id == NULL) // najdi v tabulce
-					{
-						return SEM_ERR;
-					}
-					if ((hledane_id->defined) == 0)
-					{
-						return SEM_ERR;
-					}
-					if (hledane_id->verze) // funkce pro hodnotu 1
-					{
-						getToken
-						if (token != L_ZAVORKA)
-						{
-							return SYN_ERR;
-						}
-						// nacteni vsech parametru
-						getToken
-						if (token != P_ZAVORKA)
-						{
-							return SYN_ERR;
-						}
-						getToken
-						if (token != STREDNIK)
-						{
-							return SYN_ERR;
-						}
-						return IS_OK; //naprosto citelne
-						
-					}
-					// reseni vyrazu
-					getToken
-					if (token != STREDNIK)
-					{
-						return SYN_ERR;
-					}
-					return IS_OK;		
-					// zasobniky pro precedenci
-					// 			
-			}
-
-
+			return IS_OK;
+			break;
+		/* PRIKAZ → id rovnitko PRIRAZENI strednik */
+		case ID:
+			getToken
+			if (token != PRIRAZENI) return SYN_ERR;			
+			getToken
+			outcome = prirazeni();
+			if (outcome != IS_OK) return outcome;
+			if (token != STREDNIK) return SYN_ERR;
+			getToken
+			return IS_OK;
+			break;
+		/* PRIKAZ → if lz expr pz SLOZENY else SLOZENY */
+		case IF:
+			getToken
+			if (token != L_ZAVORKA) return SYN_ERR;
+			getToken
+			// expr
+			getToken // tezko rict viz dole (hint 397)
+			if (token != P_ZAVORKA) return SYN_ERR;
+			getToken
+			outcome = slozeny();
+			if (outcome != IS_OK) return outcome;
+			if (token != ELSE) return SYN_ERR;
+			getToken
+			outcome = slozeny();
+			if (outcome != IS_OK) return outcome;
+			return IS_OK;
+			break;
+		/* PRIKAZ → for lz PROMENNA strednik expr strednik id rovnitko expr pz SLOZENY */
+		case FOR:
+			getToken
+			if (token != L_ZAVORKA) return SYN_ERR;
+			getToken
+			outcome = promenna();
+			if (outcome != IS_OK) return outcome;
+			if (token != STREDNIK) return SYN_ERR;
+			getToken
+			// expr
+			getToken // mozna nemusi byt
+			if (token != STREDNIK) return SYN_ERR;
+			getToken
+			if (token != ID) return SYN_ERR;
+			getToken
+			if (token != PRIRAZENI) return SYN_ERR;
+			getToken
+			// expr
+			getToken // mozna nemusi byt vit nahore (hint 397)
+			if (token != P_ZAVORKA) return SYN_ERR;
+			getToken
+			outcome = slozeny();
+			if (outcome != IS_OK) return outcome;
+			return IS_OK;
+			break;
+		/* PRIKAZ → return expr strednik */
+		case RETURN:
+			getToken
+			// expr
+			getToken // tezko rict
+			if (token != STREDNIK) return SYN_ERR;
+			getToken
+			return IS_OK;
+			break;
+		/* PRIKAZ → cin NACTENI strednik */
+		case CIN:
+			getToken
+			outcome = nacteni();
+			if (outcome != IS_OK) return outcome;
+			if (token != STREDNIK) return SYN_ERR;
+			getToken
+			return IS_OK;
+			break;
+		/* PRIKAZ → cout VYPIS strednik */
+		case COUT:
+			getToken
+			outcome = vypis();
+			if (outcome != IS_OK) return outcome;
+			if (token != STREDNIK) return SYN_ERR;
+			getToken
+			return IS_OK;
+			break;
+		default:
+			return SYN_ERR;
+			break;
 	}
+}
+
+int prirazeni(){
+
 }
